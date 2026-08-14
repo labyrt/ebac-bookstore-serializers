@@ -1,53 +1,61 @@
-# Bookstore — ViewSets e testes
+# Bookstore — Paginação e Django Debug Toolbar
 
 Projeto desenvolvido por **Lucy Mazzini Lessa** para o curso de Backend Python da EBAC.
 
 ## Objetivo desta etapa
 
-Construir as ViewSets a partir dos serializers do projeto Bookstore, disponibilizar as rotas da API e criar testes automatizados para validar o comportamento das operações CRUD.
+Dar continuidade ao projeto Bookstore da etapa de ViewSets, adicionando a paginação global do Django REST Framework e o Django Debug Toolbar para apoio ao desenvolvimento e análise das requisições locais.
 
-## Implementação
+## Paginação
 
-- `CategoryViewSet` com `ModelViewSet`;
-- `ProductViewSet` com `ModelViewSet`;
-- `OrderViewSet` com `ModelViewSet`;
-- ViewSets organizadas em pacotes próprios com exports nos arquivos `__init__.py`;
-- `product/urls.py` com rotas de categorias e produtos;
-- `order/urls.py` com rota de pedidos;
-- inclusão das URLs dos apps no `bookstore/urls.py`;
-- testes de criação, leitura, atualização e remoção;
-- validação das rotas com Django REST Framework.
+A paginação foi configurada globalmente em `bookstore/settings.py` usando `PageNumberPagination`:
 
-## Rotas
+```python
+REST_FRAMEWORK = {
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 5,
+}
+```
 
-- `/api/categories/`
+Com isso, as listas de categorias, produtos e pedidos usam o formato paginado do DRF, com as propriedades `count`, `next`, `previous` e `results`.
+
+Exemplos:
+
 - `/api/products/`
+- `/api/products/?page=2`
+- `/api/categories/`
 - `/api/orders/`
 
-Os detalhes de cada recurso são disponibilizados automaticamente pelos routers do DRF, por exemplo `/api/products/<id>/`.
+## Django Debug Toolbar
 
-## Testes
+O pacote `django-debug-toolbar` foi adicionado como dependência de desenvolvimento pelo Poetry e configurado com:
+
+- `debug_toolbar` em `INSTALLED_APPS`;
+- `DebugToolbarMiddleware` em `MIDDLEWARE`;
+- `127.0.0.1` em `INTERNAL_IPS`;
+- rotas de depuração em `/__debug__/`.
+
+A ferramenta é destinada ao ambiente local de desenvolvimento, com `DEBUG=True`.
+
+## Executar o projeto
 
 ```bash
 poetry install
+poetry run python manage.py runserver
+```
+
+Depois, a API pode ser acessada em `http://127.0.0.1:8000/api/products/`.
+
+## Testes e validação
+
+```bash
+poetry check
+poetry run python manage.py check
 poetry run pytest -q
 ```
 
-Validação da branch `viewsets-tests`: **20 testes aprovados**.
+Os testes desta etapa verificam a primeira e a segunda página da listagem de produtos e a configuração local do Django Debug Toolbar, além de preservar os testes das etapas anteriores.
 
-## Estrutura das ViewSets
+## Continuidade do projeto
 
-```text
-product/
-  viewsets/
-    __init__.py
-    category_viewset.py
-    product_viewset.py
-
-order/
-  viewsets/
-    __init__.py
-    order_viewset.py
-```
-
-A branch `viewsets-tests` foi criada a partir de `serializers-tests`, pois esta atividade dá continuidade aos serializers construídos na etapa anterior.
+A branch `pagination-debug-toolbar` foi criada a partir de `viewsets-tests`, pois este exercício continua diretamente a implementação de ViewSets, URLs e testes realizada na etapa anterior.
