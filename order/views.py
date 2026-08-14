@@ -1,14 +1,3 @@
-from rest_framework.viewsets import ModelViewSet
+from django.shortcuts import render
 
-from .models import Order
-from .serializers import OrderSerializer
-
-
-class OrderViewSet(ModelViewSet):
-    queryset = (
-        Order.objects.all()
-        .select_related("user")
-        .prefetch_related("product", "product__category")
-        .order_by("id")
-    )
-    serializer_class = OrderSerializer
+# Create your views here.
