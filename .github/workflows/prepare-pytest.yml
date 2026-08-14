@@ -1,0 +1,61 @@
+name: Preparar Pytest
+
+on:
+  push:
+    branches:
+      - serializers-tests
+    paths:
+      - .github/workflows/prepare-pytest.yml
+
+permissions:
+  contents: write
+
+jobs:
+  prepare-pytest:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: serializers-tests
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar Poetry
+        run: python -m pip install poetry==2.4.1
+
+      - name: Adicionar Pytest e pytest-django
+        run: poetry add --group dev pytest pytest-django
+
+      - name: Configurar Pytest
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('pyproject.toml')
+          text = path.read_text(encoding='utf-8')
+          config = '''\n[tool.pytest.ini_options]\nDJANGO_SETTINGS_MODULE = "bookstore.settings"\npython_files = ["tests.py", "test_*.py", "*_tests.py"]\n'''
+          if '[tool.pytest.ini_options]' not in text:
+              path.write_text(text.rstrip() + '\n' + config, encoding='utf-8')
+          PY
+          poetry lock
+
+      - name: Instalar dependências
+        run: poetry install
+
+      - name: Executar testes com Pytest
+        run: poetry run pytest -q
+
+      - name: Salvar dependências geradas pelo Poetry
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pyproject.toml poetry.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "test: adiciona pytest e pytest-django"
+            git push origin HEAD:serializers-tests
+          fi
