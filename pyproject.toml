@@ -3,7 +3,7 @@ name = "bookstore"
 version = "0.1.0"
 description = "Projeto Bookstore do curso Backend Python da EBAC"
 authors = [
-    {name = "Kaio Felipe"}
+    {name = "Lucy Mazzini Lessa"}
 ]
 readme = "README.md"
 requires-python = ">=3.12,<4.0"
