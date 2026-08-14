@@ -38,7 +38,7 @@ jobs:
       - name: Login no Docker Hub
         uses: docker/login-action@v4
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          username: labyrt
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Construir e publicar tags
@@ -47,21 +47,21 @@ jobs:
           context: ./docker-exercise
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:v1.0.0
-            ${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:latest
+            labyrt/ebac-hello-world:v1.0.0
+            labyrt/ebac-hello-world:latest
 
       - name: Confirmar acesso público à imagem
         shell: bash
         run: |
           docker logout
-          docker image rm "${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:v1.0.0" 2>/dev/null || true
-          docker pull "${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:v1.0.0"
-          output="$(docker run --rm "${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:v1.0.0")"
+          docker image rm "labyrt/ebac-hello-world:v1.0.0" 2>/dev/null || true
+          docker pull "labyrt/ebac-hello-world:v1.0.0"
+          output="$(docker run --rm "labyrt/ebac-hello-world:v1.0.0")"
           echo "$output"
           test "$output" = "Hello World - Lucy Mazzini Lessa | EBAC Docker"
 
       - name: Exibir link da entrega
         shell: bash
         run: |
-          echo "Docker Hub: https://hub.docker.com/r/${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world"
-          echo "Imagem: ${{ secrets.DOCKERHUB_USERNAME }}/ebac-hello-world:v1.0.0"
+          echo "Docker Hub: https://hub.docker.com/r/labyrt/ebac-hello-world"
+          echo "Imagem: labyrt/ebac-hello-world:v1.0.0"
