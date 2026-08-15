@@ -79,3 +79,46 @@ Os testes desta etapa verificam:
 ## Continuidade do projeto
 
 A branch `token-authentication-orders` foi criada a partir de `pagination-debug-toolbar`, pois esta atividade continua diretamente o projeto desenvolvido nas etapas anteriores.
+
+---
+
+## Módulo 19 — Docker
+
+Nesta etapa o Bookstore passa a ser executável dentro de um container Docker, conforme solicitado no exercício do Módulo 19.
+
+### Construir a imagem
+
+```bash
+docker build -t bookstore-ebac:module19 .
+```
+
+### Executar o projeto no container
+
+```bash
+docker run --rm -p 8000:8000 bookstore-ebac:module19
+```
+
+A aplicação fica disponível em `http://127.0.0.1:8000/`.
+
+### Dockerfile
+
+O container utiliza Python 3.12, compatível com a versão declarada no `pyproject.toml`, instala as dependências com Poetry e expõe a porta `8000`.
+
+Como medida de segurança, o processo da aplicação roda com um usuário sem privilégios de root. O arquivo `.dockerignore` também evita o envio de arquivos locais, caches, banco SQLite de desenvolvimento e arquivos `.env` para o contexto de build.
+
+### Validação automática
+
+O workflow `Docker - Exercício Módulo 19` executa o exercício integralmente em um runner do GitHub Actions:
+
+1. constrói a imagem Docker;
+2. executa `python manage.py check` dentro da imagem;
+3. executa a suíte Pytest dentro da imagem;
+4. confirma que o processo não roda como root;
+5. inicia o container usando o `CMD` do Dockerfile;
+6. verifica por HTTP que o servidor Django responde na porta 8000.
+
+Assim, a execução do Docker é comprovada sem depender da instalação do Docker Desktop na máquina local.
+
+### Branch da atividade
+
+`dockerize-bookstore-module19`
