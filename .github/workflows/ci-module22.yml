@@ -1,0 +1,121 @@
+name: CI - Módulo 22
+
+on:
+  push:
+    branches:
+      - github-actions-ci-module22
+  pull_request:
+    branches:
+      - docker-network-bridge-module21
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  tests-and-coverage:
+    name: Tests, coverage and dependency validation
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: bookstore_ci
+          POSTGRES_USER: bookstore_ci
+          POSTGRES_PASSWORD: ci-only-not-a-production-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U bookstore_ci -d bookstore_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      POSTGRES_DB: bookstore_ci
+      POSTGRES_USER: bookstore_ci
+      POSTGRES_PASSWORD: ci-only-not-a-production-secret
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+
+      - name: Validate dependency metadata and lock file
+        run: poetry check --lock
+
+      - name: Install project dependencies
+        run: poetry install --no-interaction
+
+      - name: Install coverage tooling for CI
+        run: poetry run pip install "pytest-cov>=6,<7"
+
+      - name: Django system check
+        run: poetry run python manage.py check
+
+      - name: Check for missing migrations
+        run: poetry run python manage.py makemigrations --check --dry-run
+
+      - name: Run tests with coverage
+        run: >-
+          poetry run pytest -q
+          --junitxml=junit/test-results.xml
+          --cov=bookstore
+          --cov=product
+          --cov=order
+          --cov-report=term-missing
+          --cov-report=xml:coverage.xml
+
+      - name: Upload test and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: module22-test-and-coverage-reports
+          path: |
+            junit/test-results.xml
+            coverage.xml
+          if-no-files-found: warn
+
+      - name: Upload coverage to Codecov
+        if: success()
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage.xml
+          flags: unittests
+          name: bookstore-module22
+          use_oidc: true
+          fail_ci_if_error: false
+          verbose: true
+
+  automated-code-review:
+    name: Automated code review
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Ruff
+        run: pipx install ruff
+
+      - name: Review Python code with GitHub annotations
+        run: ruff check --output-format=github --select E9,F63,F7,F82 .
+
+      - name: Verify Python files parse successfully
+        run: python -m compileall -q bookstore product order
