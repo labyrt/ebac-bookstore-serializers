@@ -1,0 +1,64 @@
+name: Docker - Exercício Módulo 19
+
+on:
+  push:
+    branches:
+      - dockerize-bookstore-module19
+  pull_request:
+    branches:
+      - token-authentication-orders
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Construir imagem Docker
+        run: docker build --pull -t bookstore-ebac:module19 .
+
+      - name: Validar configuração do Django no container
+        run: docker run --rm bookstore-ebac:module19 python manage.py check
+
+      - name: Executar testes dentro do container
+        run: docker run --rm bookstore-ebac:module19 pytest -q
+
+      - name: Verificar execução sem privilégios de root
+        shell: bash
+        run: |
+          uid="$(docker run --rm bookstore-ebac:module19 id -u)"
+          echo "UID do processo no container: $uid"
+          test "$uid" != "0"
+
+      - name: Subir aplicação usando o CMD do Dockerfile
+        run: docker run -d --name bookstore-module19 -p 8000:8000 bookstore-ebac:module19
+
+      - name: Confirmar API funcional dentro do Docker
+        shell: bash
+        run: |
+          for attempt in {1..30}; do
+            if response="$(curl --fail --silent --show-error http://127.0.0.1:8000/api/products/)"; then
+              echo "$response"
+              echo "Bookstore respondeu com sucesso dentro do Docker."
+              exit 0
+            fi
+            sleep 1
+          done
+
+          echo "A aplicação não respondeu dentro do tempo esperado."
+          docker logs bookstore-module19
+          exit 1
+
+      - name: Exibir logs do container
+        if: always()
+        run: docker logs bookstore-module19 || true
+
+      - name: Remover container de teste
+        if: always()
+        run: docker rm -f bookstore-module19 || true
