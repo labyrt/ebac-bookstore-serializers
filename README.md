@@ -122,3 +122,76 @@ Assim, a execução do Docker é comprovada sem depender da instalação do Dock
 ### Branch da atividade
 
 `dockerize-bookstore-module19`
+
+---
+
+## Módulo 20 — Docker Compose + PostgreSQL
+
+Nesta etapa o Bookstore deixa de depender apenas do banco SQLite local quando executado em containers e passa a utilizar PostgreSQL através do Docker Compose.
+
+### Arquitetura
+
+O `compose.yaml` possui dois serviços:
+
+- `web`: aplicação Django REST Framework construída pelo `Dockerfile` do Módulo 19;
+- `db`: PostgreSQL 17 com volume persistente e healthcheck.
+
+O serviço `web` só inicia depois que o PostgreSQL é considerado saudável pelo Compose.
+
+### Variáveis de ambiente
+
+As credenciais do banco não são versionadas. Crie o arquivo `.env` a partir do exemplo:
+
+```bash
+cp .env.example .env
+```
+
+No Windows, você também pode copiar `.env.example` para `.env` pelo Explorador de Arquivos e alterar a senha local.
+
+### Subir a aplicação completa
+
+```bash
+docker compose up --build
+```
+
+A API fica disponível em:
+
+```text
+http://127.0.0.1:8000/api/products/
+```
+
+Para encerrar:
+
+```bash
+docker compose down
+```
+
+Para encerrar e apagar também o volume de desenvolvimento do PostgreSQL:
+
+```bash
+docker compose down -v
+```
+
+### Banco de dados
+
+O Django lê `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST` e `POSTGRES_PORT` do ambiente. Quando `POSTGRES_HOST` está presente, o backend utilizado é `django.db.backends.postgresql`.
+
+O projeto utiliza Psycopg 3 como driver PostgreSQL. Fora do Compose, se as variáveis de PostgreSQL não existirem, o SQLite continua disponível para desenvolvimento local e compatibilidade com as etapas anteriores.
+
+### Validação automática
+
+O workflow `Docker Compose + PostgreSQL - Módulo 20` valida em um ambiente efêmero:
+
+1. sintaxe do Compose;
+2. build da aplicação;
+3. inicialização do PostgreSQL;
+4. healthcheck e ordem correta de inicialização;
+5. conexão real do Django com PostgreSQL;
+6. `manage.py check`;
+7. suíte Pytest completa usando PostgreSQL;
+8. resposta HTTP real de `/api/products/`;
+9. encerramento e remoção dos containers/volume de CI.
+
+### Branch da atividade
+
+`docker-compose-postgres-module20`
