@@ -1,12 +1,13 @@
-name: Code Review & Security - Módulo 22
+name: Code Review & Security - Projeto Final
 
 on:
   push:
     branches:
-      - github-actions-ci-module22
+      - main
+      - feat-automate-deploy
   pull_request:
     branches:
-      - docker-network-bridge-module21
+      - main
   workflow_dispatch:
 
 permissions:
