@@ -36,7 +36,7 @@ jobs:
 
     env:
       DJANGO_SECRET_KEY: ci-only-secret-key-not-used-in-production
-      DJANGO_DEBUG: "false"
+      DJANGO_DEBUG: "true"
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
       POSTGRES_DB: bookstore_ci
       POSTGRES_USER: bookstore_ci
@@ -73,3 +73,9 @@ jobs:
 
       - name: Verify Python source compiles
         run: python -m compileall -q bookstore product order
+
+      - name: Validate production mode starts without Debug Toolbar
+        env:
+          DJANGO_DEBUG: "false"
+          DJANGO_ALLOWED_HOSTS: bookstore.example.com
+        run: poetry run python manage.py check
