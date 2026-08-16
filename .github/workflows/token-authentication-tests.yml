@@ -1,0 +1,43 @@
+name: Testes Token Authentication
+
+on:
+  push:
+    branches:
+      - token-authentication-orders
+  pull_request:
+    branches:
+      - pagination-debug-toolbar
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Poetry
+        run: python -m pip install poetry==2.4.1
+
+      - name: Instalar dependências
+        run: poetry install --no-interaction
+
+      - name: Validar dependências
+        run: poetry check
+
+      - name: Validar configuração Django
+        run: poetry run python manage.py check
+
+      - name: Aplicar migrações
+        run: poetry run python manage.py migrate --noinput
+
+      - name: Executar testes
+        run: poetry run pytest -q

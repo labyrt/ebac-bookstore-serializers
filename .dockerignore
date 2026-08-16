@@ -1,10 +1,13 @@
-.venv/
+.git
+.github
 __pycache__/
 *.py[cod]
+*.sqlite3
 db.sqlite3
 .pytest_cache/
-.idea/
-.vscode/
+.venv/
 .env
 .env.*
-!.env.example
+*.log
+.DS_Store
+Thumbs.db
