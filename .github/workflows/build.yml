@@ -1,0 +1,75 @@
+name: Build - Projeto Final M23
+
+on:
+  push:
+    branches:
+      - main
+      - feat-pythonanywhere
+      - feat-automate-deploy
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: Build and test Bookstore
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: bookstore_ci
+          POSTGRES_USER: bookstore_ci
+          POSTGRES_PASSWORD: ci-only-not-a-production-secret
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U bookstore_ci -d bookstore_ci"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DJANGO_SECRET_KEY: ci-only-secret-key-not-used-in-production
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,testserver
+      POSTGRES_DB: bookstore_ci
+      POSTGRES_USER: bookstore_ci
+      POSTGRES_PASSWORD: ci-only-not-a-production-secret
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pipx install poetry==2.4.1
+
+      - name: Validate Poetry metadata and lock file
+        run: poetry check --lock
+
+      - name: Install dependencies
+        run: poetry install --no-interaction
+
+      - name: Django system check
+        run: poetry run python manage.py check
+
+      - name: Check for missing migrations
+        run: poetry run python manage.py makemigrations --check --dry-run
+
+      - name: Run test suite
+        run: poetry run pytest -q
+
+      - name: Verify Python source compiles
+        run: python -m compileall -q bookstore product order
