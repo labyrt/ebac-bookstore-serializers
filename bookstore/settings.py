@@ -128,8 +128,12 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Arquivos estáticos em produção. O collectstatic reúne os assets do Django/DRF
+# neste diretório; no PythonAnywhere, /static/ deve apontar para STATIC_ROOT.
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = Path(
+    os.getenv("DJANGO_STATIC_ROOT", str(BASE_DIR / "staticfiles"))
+)
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

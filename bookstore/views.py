@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 
 from django.conf import settings
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -70,6 +72,12 @@ def _pull_main_branch() -> str:
     return repo.head.commit.hexsha
 
 
+def _collect_static_files() -> None:
+    """Collect Django/DRF static assets into STATIC_ROOT before each reload."""
+
+    call_command("collectstatic", interactive=False, verbosity=0)
+
+
 def _reload_pythonanywhere() -> None:
     # O PythonAnywhere documenta o touch do arquivo WSGI como forma de reload.
     _wsgi_file_path().touch()
@@ -114,12 +122,19 @@ def update_server(request):
 
     try:
         commit_sha = _pull_main_branch()
+        _collect_static_files()
         _reload_pythonanywhere()
     except DeploymentConfigurationError:
         logger.exception("PythonAnywhere deployment is not configured.")
         return JsonResponse(
             {"detail": "Deployment environment is not configured."},
             status=503,
+        )
+    except CommandError:
+        logger.exception("Django static files collection failed.")
+        return JsonResponse(
+            {"detail": "Static files collection failed."},
+            status=500,
         )
     except (GitCommandError, InvalidGitRepositoryError, NoSuchPathError):
         logger.exception("Git deployment failed.")

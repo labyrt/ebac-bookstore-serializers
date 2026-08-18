@@ -43,41 +43,57 @@ class DeployWebhookTests(TestCase):
 
     @patch.dict(os.environ, {"GITHUB_WEBHOOK_SECRET": WEBHOOK_SECRET})
     @patch("bookstore.views._pull_main_branch")
+    @patch("bookstore.views._collect_static_files")
     @patch("bookstore.views._reload_pythonanywhere")
-    def test_ping_validates_webhook_without_deploying(self, reload_mock, pull_mock):
+    def test_ping_validates_webhook_without_deploying(
+        self, reload_mock, collectstatic_mock, pull_mock
+    ):
         response = self._post(event="ping")
 
         self.assertEqual(response.status_code, 200)
         pull_mock.assert_not_called()
+        collectstatic_mock.assert_not_called()
         reload_mock.assert_not_called()
 
     @patch.dict(os.environ, {"GITHUB_WEBHOOK_SECRET": WEBHOOK_SECRET})
     @patch("bookstore.views._pull_main_branch")
+    @patch("bookstore.views._collect_static_files")
     @patch("bookstore.views._reload_pythonanywhere")
-    def test_non_push_event_is_ignored(self, reload_mock, pull_mock):
+    def test_non_push_event_is_ignored(
+        self, reload_mock, collectstatic_mock, pull_mock
+    ):
         response = self._post(event="issues")
 
         self.assertEqual(response.status_code, 202)
         pull_mock.assert_not_called()
+        collectstatic_mock.assert_not_called()
         reload_mock.assert_not_called()
 
     @patch.dict(os.environ, {"GITHUB_WEBHOOK_SECRET": WEBHOOK_SECRET})
     @patch("bookstore.views._pull_main_branch")
+    @patch("bookstore.views._collect_static_files")
     @patch("bookstore.views._reload_pythonanywhere")
-    def test_push_outside_main_is_ignored(self, reload_mock, pull_mock):
+    def test_push_outside_main_is_ignored(
+        self, reload_mock, collectstatic_mock, pull_mock
+    ):
         response = self._post(ref="refs/heads/feature/test")
 
         self.assertEqual(response.status_code, 202)
         pull_mock.assert_not_called()
+        collectstatic_mock.assert_not_called()
         reload_mock.assert_not_called()
 
     @patch.dict(os.environ, {"GITHUB_WEBHOOK_SECRET": WEBHOOK_SECRET})
     @patch("bookstore.views._pull_main_branch", return_value="abc123")
+    @patch("bookstore.views._collect_static_files")
     @patch("bookstore.views._reload_pythonanywhere")
-    def test_signed_main_push_updates_and_reloads(self, reload_mock, pull_mock):
+    def test_signed_main_push_updates_collects_static_and_reloads(
+        self, reload_mock, collectstatic_mock, pull_mock
+    ):
         response = self._post()
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["commit"], "abc123")
         pull_mock.assert_called_once_with()
+        collectstatic_mock.assert_called_once_with()
         reload_mock.assert_called_once_with()
